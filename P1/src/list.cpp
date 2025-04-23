@@ -8,10 +8,9 @@ struct Node {
 
 // Linked List class
 class LinkedList {
-private:
+public:
     Node* head;
 
-public:
     LinkedList() {
         head = nullptr;
     }

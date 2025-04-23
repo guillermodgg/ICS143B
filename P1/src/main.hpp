@@ -4,33 +4,26 @@
 
 using namespace std;
 
+int n;
+
 /*
 
 PCB Data Structure, which is implemented in my program 
-as a fixed array of "PCB" objects, where each of these 
-PCB objects contains the process's state, parent index, 
+as a fixed array of "Process" objects, where each of these 
+Prcoess objects contains the process's state, parent index, 
 list of children, and list of resources.
 
 */
 
-class PCB{
-    int state;
-    int parent;
+class Process{
+public:
+    int state; // 1 = ready, 0 = blocked, -1 = free space
+    int parent; // index of running process when this process is created, parent < 0 = no parent
     Node* children;
     Node* resources;
 };
 
-/*
-create()
-allocate new PCB[j]
-state = ready
-insert j into children of i
-parent = i
-children = NULL
-resources = NULL
-insert j into RL
-display: “process j created”
-*/
+void create();
 
 /*
 destroy(j)
