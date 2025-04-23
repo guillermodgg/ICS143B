@@ -1,5 +1,8 @@
 class Process():
-    def __init__():
+    def __init__(self, parent_num : int, index : int):
+        self.parent = parent_num
+        self.index = index
+        self.state = 1 # 1 indicates it is in the Ready state, whereas 0 indiicates it is blocked
         pass
 
     def create():
