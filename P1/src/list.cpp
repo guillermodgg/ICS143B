@@ -81,6 +81,10 @@ public:
         }
     }
 
+    bool is_empty() {
+        return (head == nullptr);
+    }
+
     // Destructor to free memory
     ~LinkedList() {
         Node* temp;

@@ -20,7 +20,7 @@ public:
 
 class Resource{
 public:
-    int state;
+    int state; // 0 = free, 1 = allocated
     LinkedList* waitlist;
 };
 

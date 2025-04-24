@@ -21,6 +21,7 @@ void create() {
     for (int i = 0; i < n; i++) {
         // if state is neither 1 or 0, the space is free, initialize space
         if (PCB[i]->state < 0) {
+            //set its state to ready
             PCB[i]->state = 1;
             //if ready_list is empty, process 0 is being created
             if (ready_list->head == nullptr) {
@@ -31,7 +32,7 @@ void create() {
             }
             PCB[i]->children = new LinkedList();
             PCB[i]->resources = new LinkedList();
-
+            //add i to ready_list
             ready_list->append(i);
 
             cout << "process " << i << " created" << endl;
@@ -79,10 +80,7 @@ int free_process(int j) {
 
     //go through each resource and remove from waiitng lists if present.
     for (int i = 0; i < r; ++i) {
-        //if resource space is in use
-        if (RCB[i]->state >= 0) {
-            RCB[i]->waitlist->remove(j);
-        }
+        RCB[i]->waitlist->remove(j);
     }
 
     //release each resource
@@ -97,6 +95,76 @@ int free_process(int j) {
     PCB[j]->state = -1;
 
     return process_count;
+}
+
+/*
+request(r)
+if state of r is free
+state of r = allocated
+insert r into list of resources of process i
+display: “resource r allocated”
+else
+state of i = blocked
+move i from RL to waitlist of r
+display: “process i blocked”
+scheduler()
+*/
+void request(int r) {
+    //if r is free
+    if (RCB[r]->state == 0) {
+        //set state to allocated
+        RCB[r]->state = 1;
+        //insert r into i(current running process)'s resource list
+        PCB[ready_list->head->data]->resources->append(r);
+        cout << "resource " << r << " allocated" << endl;
+    } else {
+        //state of current running process is now blocked
+        PCB[ready_list->head->data]->state = 0;
+        //keep track of i so we can remove it safely from reeady list
+        int i = ready_list->head->data;
+        //remove i from ready list
+        ready_list->remove_from_head();
+        //i is now added to the waitlist of r
+        RCB[r]->waitlist->append(i);
+
+        cout << "process " << i << " blocked" << endl;
+
+        scheduler();
+
+    }
+
+}
+
+/*
+release(r)
+remove r from resources list of process i
+if waitlist of r is empty
+state of r = free
+else
+move process j from the head of waitlist of r to RL
+state of j = ready
+insert r into resources list of process j
+display: “resource r released”
+*/
+void release(int r) {
+    //remove r from resource list of i
+    PCB[ready_list->head->data]->resources->remove(r);
+    //if r's waitlist is empty, free the resource
+    if (RCB[r]->waitlist->is_empty()) {
+        RCB[r]->state = 0;
+    } else {
+        //keep track of j
+        int j = RCB[r]->waitlist->head->data;
+        //remove j from waitlist of r
+        RCB[r]->waitlist->remove_from_head();
+        //add j to ready list
+        ready_list->append(j);
+        //set state of j to ready
+        PCB[j]->state = 1;
+        //insert r into resources list of j
+        PCB[j]->resources->append(r);
+    }
+    cout << "resource " << r << " released" << endl;
 }
 
 void scheduler() {
