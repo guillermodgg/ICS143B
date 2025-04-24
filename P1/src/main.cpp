@@ -39,12 +39,14 @@ void create() {
             return;
         }
     }
+    //error for max amount of processes
+    cout << "Error: max amount of processes created" << endl;
 }
 
 /*
 destroy(j)
 for all k in children of j destroy(k)
-remove j from parent's list3
+remove j from parent's list
 remove j from RL or waiting list
 release all resources of j
 free PCB of j
@@ -52,10 +54,23 @@ display: “n processes destroyed”
 */
 
 void destroy(int j) {
-    //abstracted away freeing process so that a total sum of processes freed could be accumulated
-    int destroyed = free_process(j);
+    //TODO: add error if j is not an existing process
+
+    //TODO: add check to see if j is the same process as i
     
-    cout << destroyed << " processes destroyed" << endl;
+    //check to see if j is a child of i
+    for (Node* p = PCB[ready_list->head->data]->children->head; p != nullptr; p = p->next) {
+        if (p->data == j) {
+            //abstracted away freeing process so that a total sum of processes freed can be accumulated
+            int destroyed = free_process(j);
+    
+            cout << destroyed << " processes destroyed" << endl;
+        }
+    }
+    //if j is not a child of i: error
+    cout << "Error: process " << j << " is not a child of process " << ready_list->head->data << ". Cannot destroy process " << j << "." << endl;
+
+    
 }
 
 int free_process(int j) {
@@ -110,6 +125,9 @@ display: “process i blocked”
 scheduler()
 */
 void request(int r) {
+    //TODO: add error if r is not an existing resource
+
+
     //if r is free
     if (RCB[r]->state == 0) {
         //set state to allocated
@@ -147,6 +165,9 @@ insert r into resources list of process j
 display: “resource r released”
 */
 void release(int r) {
+    //TODO: add error if r is not an existing resource
+
+
     //remove r from resource list of i
     PCB[ready_list->head->data]->resources->remove(r);
     //if r's waitlist is empty, free the resource
@@ -167,8 +188,35 @@ void release(int r) {
     cout << "resource " << r << " released" << endl;
 }
 
+void timeout() {
+    //keep track of i
+    int i = ready_list->head->data;
+    //remove i from head of ready list
+    ready_list->remove_from_head();
+    //add i back to the end of ready list
+    ready_list->append(i);
+
+    scheduler();
+}
+
 void scheduler() {
     cout << "process " << ready_list->head->data << " running" << endl;
+}
+
+/*
+Init() function must be implemented, which initializes all data structures:
+All PCB entries are initialized to free except PCB[0].
+PCB[0] is initialized to be a running process with no parent, no children, and no resources.
+All RCB entries are initialized to free.
+RL contains process 0
+
+The init function should always perform the following tasks:
+• Erase all previous contents of the data structures PCB, RCB, RL
+• Create a single running process at PCB[0] with priority 0
+• Enter the process into the RL at the lowest-priority level 0
+*/
+void init() {
+
 }
 
 int main() {
