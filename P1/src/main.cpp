@@ -51,12 +51,22 @@ display: “n processes destroyed”
 */
 
 void destroy(int j) {
+    //abstracted away freeing process so that a total sum of processes freed could be accumulated
+    int destroyed = free_process(j);
+    
+    cout << destroyed << " processes destroyed" << endl;
+}
+
+int free_process(int j) {
+    int process_count = 1;
+
     //recursively call function on j's children.
     while (PCB[j]->children->head != nullptr) {
         Node* temp = PCB[j]->children->head;
         PCB[j]->children->remove_from_head();
-        destroy(temp->data);
+        process_count += free_process(temp->data);
     }
+
     //free the empty children list
     delete  PCB[j]->children;
 
@@ -66,8 +76,6 @@ void destroy(int j) {
 
     //remove j from ready list
     ready_list->remove(j);
-
-    //TODO: implement RCB and waiting list & release each resource and remove j from each waiting list
 
     //go through each resource and remove from waiitng lists if present.
     for (int i = 0; i < r; ++i) {
@@ -88,9 +96,7 @@ void destroy(int j) {
     //free the PCB
     PCB[j]->state = -1;
 
-
-
-
+    return process_count;
 }
 
 void scheduler() {
