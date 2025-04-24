@@ -6,9 +6,6 @@ the "ready" state.
 */
 LinkedList* ready_list = new LinkedList();
 
-Process* PCB[];
-
-
 /*
 create()
 allocate new PCB[j]
@@ -32,8 +29,8 @@ void create() {
             } else {
                 PCB[i]->parent = ready_list->head->data;
             }
-            PCB[i]->children = nullptr;
-            PCB[i]->resources = nullptr;
+            PCB[i]->children = new LinkedList();
+            PCB[i]->resources = new LinkedList();
 
             ready_list->append(i);
 
@@ -41,4 +38,65 @@ void create() {
             return;
         }
     }
+}
+
+/*
+destroy(j)
+for all k in children of j destroy(k)
+remove j from parent's list3
+remove j from RL or waiting list
+release all resources of j
+free PCB of j
+display: “n processes destroyed”
+*/
+
+void destroy(int j) {
+    //recursively call function on j's children.
+    while (PCB[j]->children->head != nullptr) {
+        Node* temp = PCB[j]->children->head;
+        PCB[j]->children->remove_from_head();
+        destroy(temp->data);
+    }
+    //free the empty children list
+    delete  PCB[j]->children;
+
+    //remove j from parent's list
+    int p = PCB[j]->parent;
+    PCB[p]->children->remove(j);
+
+    //remove j from ready list
+    ready_list->remove(j);
+
+    //TODO: implement RCB and waiting list & release each resource and remove j from each waiting list
+
+    //go through each resource and remove from waiitng lists if present.
+    for (int i = 0; i < r; ++i) {
+        //if resource space is in use
+        if (RCB[i]->state >= 0) {
+            RCB[i]->waitlist->remove(j);
+        }
+    }
+
+    //release each resource
+    for (Node* p = PCB[j]->resources->head; p != nullptr; p = p->next) {
+        release(p->data);
+    }
+
+    //free the resource list
+    delete PCB[j]->resources;
+
+    //free the PCB
+    PCB[j]->state = -1;
+
+
+
+
+}
+
+void scheduler() {
+    cout << "process " << ready_list->head->data << " running" << endl;
+}
+
+int main() {
+    return 0;
 }

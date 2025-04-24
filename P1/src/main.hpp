@@ -4,7 +4,25 @@
 
 using namespace std;
 
+//fixed size of PCB data structure
 int n;
+
+//fixed size of RCB data structure
+int r;
+
+class Process{
+public:
+    int state; // 1 = ready, 0 = blocked, -1 = free space
+    int parent; // index of running process when this process is created, parent < 0 = no parent
+    LinkedList* children;
+    LinkedList* resources;
+};
+
+class Resource{
+public:
+    int state;
+    LinkedList* waitlist;
+};
 
 /*
 
@@ -15,22 +33,16 @@ list of children, and list of resources.
 
 */
 
-class Process{
-public:
-    int state; // 1 = ready, 0 = blocked, -1 = free space
-    int parent; // index of running process when this process is created, parent < 0 = no parent
-    Node* children;
-    Node* resources;
-};
+Process* PCB[];
+
+Resource* RCB[];
 
 void create();
 
-/*
-destroy(j)
-for all k in children of j destroy(k)
-remove j from parent's list
-remove j from RL or waiting list
-release all resources of j
-free PCB of j
-display: “n processes destroyed”
-*/
+void destroy(int j);
+
+void request(int r);
+
+void release(int r);
+
+void scheduler();
