@@ -59,3 +59,5 @@ void timeout();
 void scheduler();
 
 void init();
+
+bool is_number(string param);

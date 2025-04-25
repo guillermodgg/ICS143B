@@ -1,5 +1,7 @@
 #include "main.hpp"
 #include <string>
+#include <sstream>
+
 /*
 Ready list: linked list data structure that links 
 nodes storing the indexes of each PCB object in 
@@ -276,6 +278,16 @@ void init() {
 
 }
 
+bool is_number(string param) {
+    try {
+        size_t pos;
+        stoi(param, &pos);
+        return pos == param.size();
+    } catch (...) {
+        return false;
+    }
+}
+
 int main() {
     //max processes = 16
     n = 16;
@@ -287,6 +299,42 @@ int main() {
     PCB = new Process[n];
     //initialize RCB array
     RCB = new Resource[m];
+    //ensure data structures are ready and process 0 is created
+    init();
+
+    string line;
+    while (getline(cin, line)) {
+        istringstream iss(line);
+        string command, param;
+
+        iss >> command >> param;
+
+        if (command == "cr") {
+            create();
+        } else if (command == "de") {
+            if (param.empty() || !is_number(param)) {
+                cout << "Error: please specify a valid process to delete" << endl;
+                continue;
+            }
+            destroy(stoi(param));
+        } else if (command == "rq") {
+            if (param.empty() || !is_number(param)) {
+                cout << "Error: please specify a valid resource to request" << endl;
+                continue;
+            }
+            request(stoi(param));
+        } else if (command == "rl") {
+            if (param.empty() || !is_number(param)) {
+                cout << "Error: please specify a valid resource to release" << endl;
+                continue;
+            }
+            release(stoi(param));
+        } else if (command == "to") {
+            timeout();
+        } else if (command == "in") {
+            init();
+        }
+    }
 
 
     return 0;
