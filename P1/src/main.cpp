@@ -55,6 +55,30 @@ void Ready_list::remove_from_head() {
     head = three_tier->head;
 }
 
+PairList::PairList() {
+    processes = new LinkedList();
+}
+
+void PairList::append(int val, int units) {
+    processes->append(val);
+    requested[val] = units;
+    head = processes->head;
+}
+
+void PairList::remove(int j) {
+    processes->remove(j);
+    head = processes->head;
+}
+
+void PairList::remove_from_head() {
+    processes->remove_from_head();
+    head = processes->head;
+}
+
+bool PairList::is_empty() {
+    return processes->is_empty();
+}
+
 void create(int p) {
     for (int i = 0; i < n; i++) {
         // if state is neither 1 or 0, the space is free, initialize space
@@ -71,7 +95,7 @@ void create(int p) {
                 PCB[ready_list->head->data].children->append(i);
             }
             PCB[i].children = new LinkedList();
-            PCB[i].resources = new LinkedList();
+            PCB[i].resources = new PairList();
             //add i to ready_list
             ready_list->append(i);
 
@@ -112,6 +136,8 @@ void destroy(int j) {
     
         cout << destroyed << " processes destroyed" << endl;
 
+        scheduler();
+
         return;
     }
     
@@ -125,6 +151,8 @@ void destroy(int j) {
             int destroyed = free_process(j);
     
             cout << destroyed << " processes destroyed" << endl;
+
+            scheduler();
 
             return;
         }
@@ -156,7 +184,7 @@ int free_process(int j) {
 
     //release each resource
     for (Node* p = PCB[j].resources->head; p != nullptr; p = p->next) {
-        release(p->data);
+        release(p->data, -1);
     }
 
     //free the resource list
@@ -170,7 +198,7 @@ int free_process(int j) {
 }
 
 /*
-request(r)
+request(r),
 if state of r is free
 state of r = allocated
 insert r into list of resources of process i
@@ -181,7 +209,7 @@ move i from RL to waitlist of r
 display: “process i blocked”
 scheduler()
 */
-void request(int r) {
+void request(int r, int k) {
     //error if r is not an existing resource
     if (r < 0 || r >= m) {
         cout << "Error: " << r << " is not an existing resource." << endl;
@@ -203,13 +231,17 @@ void request(int r) {
     }
 
     //if r is free
-    if (RCB[r].state == 0) {
+    if ((RCB[r].inventory - RCB[r].state) >= k) {
         //set state to allocated
         RCB[r].state = 1;
         //insert r into i(current running process)'s resource list
-        PCB[ready_list->head->data].resources->append(r);
+        PCB[ready_list->head->data].resources->append(r, k);
         cout << "resource " << r << " allocated" << endl;
     } else {
+        if (k > RCB[r].inventory) {
+            cout << "Error: can't request " << k << " units from resource " << r << ", which has " << RCB[r].inventory << " units total." << endl;
+            return;
+        }
         //state of current running process is now blocked
         PCB[ready_list->head->data].state = 0;
         //keep track of i so we can remove it safely from reeady list
@@ -217,7 +249,7 @@ void request(int r) {
         //remove i from ready list
         ready_list->remove_from_head();
         //i is now added to the waitlist of r
-        RCB[r].waitlist->append(i);
+        RCB[r].waitlist->append(i, k);
 
         cout << "process " << i << " blocked" << endl;
 
@@ -238,7 +270,7 @@ state of j = ready
 insert r into resources list of process j
 display: “resource r released”
 */
-void release(int r) {
+void release(int r, int k) {
     //error if r is not an existing resource
     if (r < 0 || r >= m) {
         cout << "Error: " << r << " is not an existing resource." << endl;
@@ -246,19 +278,27 @@ void release(int r) {
     }
 
     //error if i is not holding r
-    if(PCB[ready_list->head->data].resources->find(r) == nullptr) {
+    if(PCB[ready_list->head->data].resources->processes->find(r) == nullptr) {
         cout << "Error: process " << ready_list->head->data << " is not holding resource " << r << "." << endl;
         return;
     }
 
-    //remove r from resource list of i
-    PCB[ready_list->head->data].resources->remove(r);
-    //if r's waitlist is empty, free the resource
-    if (RCB[r].waitlist->is_empty()) {
-        RCB[r].state = 0;
-    } else {
-        //keep track of j
-        int j = RCB[r].waitlist->head->data;
+    //error if releasing more units than we have
+    if (PCB[ready_list->head->data].resources->requested[r] < k) {
+        cout << "Error: cant release more units than already holding." << endl;
+        return;
+    }
+
+    //remove r from resource list of i if releasing all units
+    if (PCB[ready_list->head->data].resources->requested[r] == k){
+        PCB[ready_list->head->data].resources->remove(r);
+    }
+    //reduce the state by # of units freed
+    RCB[r].state -= k;
+    //keep track of j
+    int j = RCB[r].waitlist->head->data;
+    int u = RCB[r].waitlist->requested[j];
+    while (u < (RCB[r].inventory - RCB[r].state)) {
         //remove j from waitlist of r
         RCB[r].waitlist->remove_from_head();
         //add j to ready list
@@ -266,9 +306,14 @@ void release(int r) {
         //set state of j to ready
         PCB[j].state = 1;
         //insert r into resources list of j
-        PCB[j].resources->append(r);
+        PCB[j].resources->append(r, u);
+
+        int j = RCB[r].waitlist->head->data;
+        int u = RCB[r].waitlist->requested[j];
     }
+        
     cout << "resource " << r << " released" << endl;
+    scheduler();
 }
 
 void timeout() {
@@ -316,8 +361,16 @@ void init() {
     //set all resource states to free & delete existing waitlist & allocate space for their new waitlists;
     for (int i = 0; i < m; ++i) {
         RCB[i].state = 0;
+        if (i < 2) {
+            RCB[i].inventory = 1;
+        } else if (i == 2) {
+            RCB[i].inventory = 2;
+        } else {
+            RCB[i].inventory = 3;
+        }
+        
         delete RCB[i].waitlist;
-        RCB[i].waitlist = new LinkedList();
+        RCB[i].waitlist = new PairList();
     }
 
 
@@ -350,9 +403,9 @@ int main() {
     string line;
     while (getline(cin, line)) {
         istringstream iss(line);
-        string command, param;
+        string command, param, param2;
 
-        iss >> command >> param;
+        iss >> command >> param >> param2;
 
         if (command == "cr") {
             if (param.empty() || !is_number(param) || stoi(param) < 0 || stoi(param) > 2) {
@@ -367,17 +420,17 @@ int main() {
             }
             destroy(stoi(param));
         } else if (command == "rq") {
-            if (param.empty() || !is_number(param)) {
-                cout << "Error: please specify a valid resource to request" << endl;
+            if (param.empty() || !is_number(param) || !is_number(param2)) {
+                cout << "Error: please specify a valid input" << endl;
                 continue;
             }
-            request(stoi(param));
+            request(stoi(param), stoi(param2));
         } else if (command == "rl") {
-            if (param.empty() || !is_number(param)) {
-                cout << "Error: please specify a valid resource to release" << endl;
+            if (param.empty() || !is_number(param) || !is_number(param2)) {
+                cout << "Error: please specify a valid input" << endl;
                 continue;
             }
-            release(stoi(param));
+            release(stoi(param), stoi(param2));
         } else if (command == "to") {
             timeout();
         } else if (command == "in") {

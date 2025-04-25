@@ -40,13 +40,14 @@ public:
     int parent; // index of running process when this process is created, parent < 0 = no parent
     int priority; // 0, 1, 2 levels of priority
     LinkedList* children = nullptr;
-    LinkedList* resources = nullptr;
+    PairList* resources = nullptr;
 };
 
 class Resource{
 public:
-    int state; // 0 = free, 1 = allocated
-    LinkedList* waitlist = nullptr;
+    int state; // counter to keep track of units available
+    int inventory; // # of total units possible
+    PairList* waitlist = nullptr;
 };
 
 /*
@@ -64,15 +65,35 @@ Resource objects contains the resource's state and waitlist.
 */
 Resource* RCB;
 
+class PairList {
+public:
+
+    LinkedList* processes;
+
+    int requested[16];
+
+    Node* head;
+
+    PairList();
+
+    void append(int val, int units);
+
+    void remove(int j);
+
+    void remove_from_head();
+
+    bool is_empty();
+};
+
 void create(int p);
 
 void destroy(int j);
 
 int free_process(int j);
 
-void request(int r);
+void request(int r, int k);
 
-void release(int r);
+void release(int r, int k);
 
 void timeout();
 
