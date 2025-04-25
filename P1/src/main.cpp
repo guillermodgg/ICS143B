@@ -295,23 +295,27 @@ void release(int r, int k) {
     }
     //reduce the state by # of units freed
     RCB[r].state -= k;
-    //keep track of j
-    int j = RCB[r].waitlist->head->data;
-    int u = RCB[r].waitlist->requested[j];
-    while (u <= (RCB[r].inventory - RCB[r].state)) {
-        //remove j from waitlist of r
-        RCB[r].waitlist->remove_from_head();
-        //add j to ready list
-        ready_list->append(j);
-        //set state of j to ready
-        PCB[j].state = 1;
-        //insert r into resources list of j
-        PCB[j].resources->append(r, u);
-        RCB[r].state += u;
+    
+    if (RCB[r].waitlist->head != nullptr) {
+        //keep track of j
+        int j = RCB[r].waitlist->head->data;
+        int u = RCB[r].waitlist->requested[j];
+    
+        while (u <= (RCB[r].inventory - RCB[r].state)) {
+            //remove j from waitlist of r
+            RCB[r].waitlist->remove_from_head();
+            //add j to ready list
+            ready_list->append(j);
+            //set state of j to ready
+            PCB[j].state = 1;
+            //insert r into resources list of j
+            PCB[j].resources->append(r, u);
+            RCB[r].state += u;
 
-        if (RCB[r].waitlist->head != nullptr) {
-            int j = RCB[r].waitlist->head->data;
-            int u = RCB[r].waitlist->requested[j];
+            if (RCB[r].waitlist->head != nullptr) {
+                j = RCB[r].waitlist->head->data;
+                u = RCB[r].waitlist->requested[j];
+            }
         }
     }
         
@@ -375,6 +379,7 @@ void init() {
         delete RCB[i].waitlist;
         RCB[i].waitlist = new PairList();
     }
+    cout << endl;
 
 
 }
