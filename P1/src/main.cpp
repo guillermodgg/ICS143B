@@ -1,10 +1,10 @@
 #include "main.hpp"
+#include <string>
 /*
 Ready list: linked list data structure that links 
 nodes storing the indexes of each PCB object in 
 the "ready" state.
 */
-LinkedList* ready_list = new LinkedList();
 
 /*
 create()
@@ -253,16 +253,41 @@ The init function should always perform the following tasks:
 • Enter the process into the RL at the lowest-priority level 0
 */
 void init() {
+    //clear ready list;
+    delete ready_list;
+
+    ready_list = new LinkedList();
+
+    //set all process states to free & free any memory that may have been allocated
+    for (int i = 0; i < n; ++i) {
+        PCB[i].state = -1;
+        delete PCB[i].children;
+        delete PCB[i].resources;
+    }
+    //make PCB[0] (create() handles the case where PCB[0] is made and sets parent to -1)
+    create();
+    //set all resource states to free & delete existing waitlist & allocate space for their new waitlists;
+    for (int i = 0; i < m; ++i) {
+        RCB[i].state = 0;
+        delete RCB[i].waitlist;
+        RCB[i].waitlist = new LinkedList();
+    }
+
+
+}
+
+int main() {
     //max processes = 16
     n = 16;
     //max resources = 4
     m = 4;
+    //create the ready list
+    ready_list = new LinkedList();
     //initialize PCB array
     PCB = new Process[n];
     //initialize RCB array
     RCB = new Resource[m];
-}
 
-int main() {
+
     return 0;
 }
