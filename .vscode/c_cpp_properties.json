@@ -3,7 +3,8 @@
         {
             "name": "Mac",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/opt/homebrew/Cellar/gcc/14.2.0_1"
             ],
             "defines": [],
             "compilerPath": "/opt/homebrew/bin/g++-14",

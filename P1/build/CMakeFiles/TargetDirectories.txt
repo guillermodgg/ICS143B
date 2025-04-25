@@ -1,0 +1,3 @@
+/Users/guillermogarcia/Desktop/CS 143B/p1/build/CMakeFiles/ProcessManager.dir
+/Users/guillermogarcia/Desktop/CS 143B/p1/build/CMakeFiles/edit_cache.dir
+/Users/guillermogarcia/Desktop/CS 143B/p1/build/CMakeFiles/rebuild_cache.dir

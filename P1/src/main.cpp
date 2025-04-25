@@ -31,6 +31,7 @@ void create() {
             // else, the current running process is the parent (implicitly defined as the head of ready_list)
             } else {
                 PCB[i].parent = ready_list->head->data;
+                PCB[ready_list->head->data].children->append(i);
             }
             PCB[i].children = new LinkedList();
             PCB[i].resources = new LinkedList();
@@ -64,6 +65,10 @@ void destroy(int j) {
 
     //check to see if j is the same process as i
     if (j == ready_list->head->data) {
+        //remove j from parent's list
+        int p = PCB[j].parent;
+        PCB[p].children->remove(j);
+
         //abstracted away freeing process so that a total sum of processes freed can be accumulated
         int destroyed = free_process(j);
     
@@ -75,6 +80,10 @@ void destroy(int j) {
     //if not, check to see if j is a child of i
     for (Node* p = PCB[ready_list->head->data].children->head; p != nullptr; p = p->next) {
         if (p->data == j) {
+            //remove j from parent's list
+            int p = PCB[j].parent;
+            PCB[p].children->remove(j);
+
             int destroyed = free_process(j);
     
             cout << destroyed << " processes destroyed" << endl;
@@ -90,21 +99,17 @@ int free_process(int j) {
     int process_count = 1;
 
     //recursively call function on j's children.
-    while (PCB[j].children->head != nullptr) {
-        Node* temp = PCB[j].children->head;
-        PCB[j].children->remove_from_head();
-        process_count += free_process(temp->data);
+    for (Node* p = PCB[j].children->head; p != nullptr; p = p->next) {
+        process_count += free_process(p->data);
     }
-
-    //free the empty children list
-    delete  PCB[j].children;
-
-    //remove j from parent's list
-    int p = PCB[j].parent;
-    PCB[p].children->remove(j);
 
     //remove j from ready list
     ready_list->remove(j);
+
+    //free the empty children list
+    delete  PCB[j].children;
+    PCB[j].children = nullptr;
+
 
     //go through each resource and remove from waiitng lists if present.
     for (int i = 0; i < m; ++i) {
@@ -118,6 +123,7 @@ int free_process(int j) {
 
     //free the resource list
     delete PCB[j].resources;
+    PCB[j].resources = nullptr;
 
     //free the PCB
     PCB[j].state = -1;

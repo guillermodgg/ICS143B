@@ -17,7 +17,7 @@ public:
 
     // Append a new node at the end
     void append(int val) {
-        Node* newNode = new Node(val);
+        Node* newNode = new Node{val, nullptr};
 
         if (head == nullptr) {
             head = newNode;
