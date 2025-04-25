@@ -8,7 +8,7 @@ using namespace std;
 int n;
 
 //fixed size of RCB data structure
-int r;
+int m;
 
 class Process{
 public:
@@ -27,17 +27,17 @@ public:
 /*
 PCB Data Structure, which is implemented in my program 
 as a fixed array of "Process" objects, where each of these 
-Prcoess objects contains the process's state, parent index, 
+Process objects contains the process's state, parent index, 
 list of children, and list of resources.
 */
-Process* PCB[];
+Process* PCB;
 
 /*
 RCB Data Structure, which is implemented in my program 
 as a fixed array of "Resource" objects, where each of these 
 Resource objects contains the resource's state and waitlist.
 */
-Resource* RCB[];
+Resource* RCB;
 
 void create();
 

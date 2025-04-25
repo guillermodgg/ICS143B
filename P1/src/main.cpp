@@ -20,18 +20,18 @@ display: “process j created”
 void create() {
     for (int i = 0; i < n; i++) {
         // if state is neither 1 or 0, the space is free, initialize space
-        if (PCB[i]->state < 0) {
+        if (PCB[i].state < 0) {
             //set its state to ready
-            PCB[i]->state = 1;
+            PCB[i].state = 1;
             //if ready_list is empty, process 0 is being created
             if (ready_list->head == nullptr) {
-                PCB[i]->parent = -1; // no parent
+                PCB[i].parent = -1; // no parent
             // else, the current running process is the parent (implicitly defined as the head of ready_list)
             } else {
-                PCB[i]->parent = ready_list->head->data;
+                PCB[i].parent = ready_list->head->data;
             }
-            PCB[i]->children = new LinkedList();
-            PCB[i]->resources = new LinkedList();
+            PCB[i].children = new LinkedList();
+            PCB[i].resources = new LinkedList();
             //add i to ready_list
             ready_list->append(i);
 
@@ -54,60 +54,71 @@ display: “n processes destroyed”
 */
 
 void destroy(int j) {
-    //TODO: add error if j is not an existing process
+    //error if j is not an existing process
+    if (j < 0 || j >= n) {
+        cout << "Error: process " << j << " not an existing process." << endl;
+        return;
+    }
 
-    //TODO: add check to see if j is the same process as i
+    //check to see if j is the same process as i
+    if (j == ready_list->head->data) {
+        //abstracted away freeing process so that a total sum of processes freed can be accumulated
+        int destroyed = free_process(j);
     
-    //check to see if j is a child of i
-    for (Node* p = PCB[ready_list->head->data]->children->head; p != nullptr; p = p->next) {
+        cout << destroyed << " processes destroyed" << endl;
+
+        return;
+    }
+    
+    //if not, check to see if j is a child of i
+    for (Node* p = PCB[ready_list->head->data].children->head; p != nullptr; p = p->next) {
         if (p->data == j) {
-            //abstracted away freeing process so that a total sum of processes freed can be accumulated
             int destroyed = free_process(j);
     
             cout << destroyed << " processes destroyed" << endl;
+
+            return;
         }
     }
     //if j is not a child of i: error
-    cout << "Error: process " << j << " is not a child of process " << ready_list->head->data << ". Cannot destroy process " << j << "." << endl;
-
-    
+    cout << "Error: process " << j << " is not a child of process of " << ready_list->head->data << ". Cannot destroy process " << j << "." << endl;
 }
 
 int free_process(int j) {
     int process_count = 1;
 
     //recursively call function on j's children.
-    while (PCB[j]->children->head != nullptr) {
-        Node* temp = PCB[j]->children->head;
-        PCB[j]->children->remove_from_head();
+    while (PCB[j].children->head != nullptr) {
+        Node* temp = PCB[j].children->head;
+        PCB[j].children->remove_from_head();
         process_count += free_process(temp->data);
     }
 
     //free the empty children list
-    delete  PCB[j]->children;
+    delete  PCB[j].children;
 
     //remove j from parent's list
-    int p = PCB[j]->parent;
-    PCB[p]->children->remove(j);
+    int p = PCB[j].parent;
+    PCB[p].children->remove(j);
 
     //remove j from ready list
     ready_list->remove(j);
 
     //go through each resource and remove from waiitng lists if present.
-    for (int i = 0; i < r; ++i) {
-        RCB[i]->waitlist->remove(j);
+    for (int i = 0; i < m; ++i) {
+        RCB[i].waitlist->remove(j);
     }
 
     //release each resource
-    for (Node* p = PCB[j]->resources->head; p != nullptr; p = p->next) {
+    for (Node* p = PCB[j].resources->head; p != nullptr; p = p->next) {
         release(p->data);
     }
 
     //free the resource list
-    delete PCB[j]->resources;
+    delete PCB[j].resources;
 
     //free the PCB
-    PCB[j]->state = -1;
+    PCB[j].state = -1;
 
     return process_count;
 }
@@ -125,25 +136,42 @@ display: “process i blocked”
 scheduler()
 */
 void request(int r) {
-    //TODO: add error if r is not an existing resource
+    //error if r is not an existing resource
+    if (r < 0 || r >= m) {
+        cout << "Error: " << r << " is not an existing resource." << endl;
+        return;
+    }
 
+    //error if process 0 requests a resource
+    if (ready_list->head->data == 0) {
+        cout << "Error: Process 0 cannot request resources" << endl;
+        return;
+    }
+
+    //error if i already holds r
+    for (Node* p = PCB[ready_list->head->data].resources->head; p != nullptr; p = p->next) {
+        if (p->data == r) {
+            cout << "Error: Process " << ready_list->head->data << " already holds resource " << r << "." << endl;
+            return;
+        }
+    }
 
     //if r is free
-    if (RCB[r]->state == 0) {
+    if (RCB[r].state == 0) {
         //set state to allocated
-        RCB[r]->state = 1;
+        RCB[r].state = 1;
         //insert r into i(current running process)'s resource list
-        PCB[ready_list->head->data]->resources->append(r);
+        PCB[ready_list->head->data].resources->append(r);
         cout << "resource " << r << " allocated" << endl;
     } else {
         //state of current running process is now blocked
-        PCB[ready_list->head->data]->state = 0;
+        PCB[ready_list->head->data].state = 0;
         //keep track of i so we can remove it safely from reeady list
         int i = ready_list->head->data;
         //remove i from ready list
         ready_list->remove_from_head();
         //i is now added to the waitlist of r
-        RCB[r]->waitlist->append(i);
+        RCB[r].waitlist->append(i);
 
         cout << "process " << i << " blocked" << endl;
 
@@ -165,25 +193,34 @@ insert r into resources list of process j
 display: “resource r released”
 */
 void release(int r) {
-    //TODO: add error if r is not an existing resource
+    //error if r is not an existing resource
+    if (r < 0 || r >= m) {
+        cout << "Error: " << r << " is not an existing resource." << endl;
+        return;
+    }
 
+    //error if i is not holding r
+    if(PCB[ready_list->head->data].resources->find(r) == nullptr) {
+        cout << "Error: process " << ready_list->head->data << " is not holding resource " << r << "." << endl;
+        return;
+    }
 
     //remove r from resource list of i
-    PCB[ready_list->head->data]->resources->remove(r);
+    PCB[ready_list->head->data].resources->remove(r);
     //if r's waitlist is empty, free the resource
-    if (RCB[r]->waitlist->is_empty()) {
-        RCB[r]->state = 0;
+    if (RCB[r].waitlist->is_empty()) {
+        RCB[r].state = 0;
     } else {
         //keep track of j
-        int j = RCB[r]->waitlist->head->data;
+        int j = RCB[r].waitlist->head->data;
         //remove j from waitlist of r
-        RCB[r]->waitlist->remove_from_head();
+        RCB[r].waitlist->remove_from_head();
         //add j to ready list
         ready_list->append(j);
         //set state of j to ready
-        PCB[j]->state = 1;
+        PCB[j].state = 1;
         //insert r into resources list of j
-        PCB[j]->resources->append(r);
+        PCB[j].resources->append(r);
     }
     cout << "resource " << r << " released" << endl;
 }
@@ -216,7 +253,14 @@ The init function should always perform the following tasks:
 • Enter the process into the RL at the lowest-priority level 0
 */
 void init() {
-
+    //max processes = 16
+    n = 16;
+    //max resources = 4
+    m = 4;
+    //initialize PCB array
+    PCB = new Process[n];
+    //initialize RCB array
+    RCB = new Resource[m];
 }
 
 int main() {
