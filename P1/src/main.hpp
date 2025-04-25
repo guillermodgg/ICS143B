@@ -11,14 +11,34 @@ int n;
 int m;
 
 /*
-Ready List, implemented as a singly linked list.
+Ready List, implemented as a singly linked list,
+with its three priority tiers accounted for when appending to the list.
 */
-LinkedList* ready_list = nullptr;
+
+
+class Ready_list {
+public:
+    LinkedList* three_tier = nullptr;
+
+    Node* head = nullptr;
+
+    Ready_list();
+
+    void append(int val);
+
+    void remove(int j);
+
+    void remove_from_head();
+
+};
+
+Ready_list* ready_list = nullptr;
 
 class Process{
 public:
     int state; // 1 = ready, 0 = blocked, -1 = free space
     int parent; // index of running process when this process is created, parent < 0 = no parent
+    int priority; // 0, 1, 2 levels of priority
     LinkedList* children = nullptr;
     LinkedList* resources = nullptr;
 };
@@ -44,7 +64,7 @@ Resource objects contains the resource's state and waitlist.
 */
 Resource* RCB;
 
-void create();
+void create(int p);
 
 void destroy(int j);
 

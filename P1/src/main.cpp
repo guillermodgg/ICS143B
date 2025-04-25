@@ -19,12 +19,49 @@ resources = NULL
 insert j into RL
 display: “process j created”
 */
-void create() {
+Ready_list::Ready_list() {
+    three_tier = new LinkedList();
+}
+
+void Ready_list::append(int val) {
+     Node* newNode = new Node{val, nullptr};
+
+    if (head == nullptr) {
+        head = three_tier->head = newNode;
+        return;
+    }
+
+    if (PCB[val].priority > PCB[head->data].priority) {
+        newNode->next = head;
+        head = three_tier->head = newNode;
+        return;
+    }
+
+    Node* temp = head;
+    while (temp->next != nullptr && PCB[temp->next->data].priority >= PCB[val].priority) {
+        temp = temp->next;
+    }
+    newNode->next = temp->next;
+    temp->next = newNode;
+}
+
+void Ready_list::remove(int j) {
+    three_tier->remove(j);
+    head = three_tier->head;
+}
+
+void Ready_list::remove_from_head() {
+    three_tier->remove_from_head();
+    head = three_tier->head;
+}
+
+void create(int p) {
     for (int i = 0; i < n; i++) {
         // if state is neither 1 or 0, the space is free, initialize space
         if (PCB[i].state < 0) {
             //set its state to ready
             PCB[i].state = 1;
+            PCB[i].priority = p;
             //if ready_list is empty, process 0 is being created
             if (ready_list->head == nullptr) {
                 PCB[i].parent = -1; // no parent
@@ -39,6 +76,7 @@ void create() {
             ready_list->append(i);
 
             cout << "process " << i << " created" << endl;
+            scheduler();
             return;
         }
     }
@@ -264,7 +302,8 @@ void init() {
     //clear ready list;
     delete ready_list;
 
-    ready_list = new LinkedList();
+    ready_list = new Ready_list();
+    ready_list->three_tier = new LinkedList();
 
     //set all process states to free & free any memory that may have been allocated
     for (int i = 0; i < n; ++i) {
@@ -273,7 +312,7 @@ void init() {
         delete PCB[i].resources;
     }
     //make PCB[0] (create() handles the case where PCB[0] is made and sets parent to -1)
-    create();
+    create(0);
     //set all resource states to free & delete existing waitlist & allocate space for their new waitlists;
     for (int i = 0; i < m; ++i) {
         RCB[i].state = 0;
@@ -300,7 +339,7 @@ int main() {
     //max resources = 4
     m = 4;
     //create the ready list
-    ready_list = new LinkedList();
+    ready_list = new Ready_list();
     //initialize PCB array
     PCB = new Process[n];
     //initialize RCB array
@@ -316,7 +355,11 @@ int main() {
         iss >> command >> param;
 
         if (command == "cr") {
-            create();
+            if (param.empty() || !is_number(param) || stoi(param) < 0 || stoi(param) > 2) {
+                cout << "Error: please specify a valid priority level for process" << endl;
+                continue;
+            }
+            create(stoi(param));
         } else if (command == "de") {
             if (param.empty() || !is_number(param)) {
                 cout << "Error: please specify a valid process to delete" << endl;
