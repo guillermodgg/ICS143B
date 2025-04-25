@@ -11,6 +11,30 @@ int n;
 int m;
 
 /*
+Pairlist, used to map a process or resource to a 
+number of units either requested or allocated
+*/
+class PairList {
+public:
+
+    LinkedList* processes;
+
+    int requested[16];
+
+    Node* head;
+
+    PairList();
+
+    void append(int val, int units);
+
+    void remove(int j);
+
+    void remove_from_head();
+
+    bool is_empty();
+};
+
+/*
 Ready List, implemented as a singly linked list,
 with its three priority tiers accounted for when appending to the list.
 */
@@ -64,26 +88,6 @@ as a fixed array of "Resource" objects, where each of these
 Resource objects contains the resource's state and waitlist.
 */
 Resource* RCB;
-
-class PairList {
-public:
-
-    LinkedList* processes;
-
-    int requested[16];
-
-    Node* head;
-
-    PairList();
-
-    void append(int val, int units);
-
-    void remove(int j);
-
-    void remove_from_head();
-
-    bool is_empty();
-};
 
 void create(int p);
 

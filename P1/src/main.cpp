@@ -232,8 +232,8 @@ void request(int r, int k) {
 
     //if r is free
     if ((RCB[r].inventory - RCB[r].state) >= k) {
-        //set state to allocated
-        RCB[r].state = 1;
+        //allocate units
+        RCB[r].state += k;
         //insert r into i(current running process)'s resource list
         PCB[ready_list->head->data].resources->append(r, k);
         cout << "resource " << r << " allocated" << endl;
@@ -298,7 +298,7 @@ void release(int r, int k) {
     //keep track of j
     int j = RCB[r].waitlist->head->data;
     int u = RCB[r].waitlist->requested[j];
-    while (u < (RCB[r].inventory - RCB[r].state)) {
+    while (u <= (RCB[r].inventory - RCB[r].state)) {
         //remove j from waitlist of r
         RCB[r].waitlist->remove_from_head();
         //add j to ready list
@@ -307,9 +307,12 @@ void release(int r, int k) {
         PCB[j].state = 1;
         //insert r into resources list of j
         PCB[j].resources->append(r, u);
+        RCB[r].state += u;
 
-        int j = RCB[r].waitlist->head->data;
-        int u = RCB[r].waitlist->requested[j];
+        if (RCB[r].waitlist->head != nullptr) {
+            int j = RCB[r].waitlist->head->data;
+            int u = RCB[r].waitlist->requested[j];
+        }
     }
         
     cout << "resource " << r << " released" << endl;
