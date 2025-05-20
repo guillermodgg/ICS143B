@@ -17,11 +17,11 @@ number of units either requested or allocated
 class PairList {
 public:
 
-    LinkedList* processes;
+    LinkedList* processes = nullptr;
 
     int requested[16];
 
-    Node* head;
+    Node* head = nullptr;
 
     PairList();
 

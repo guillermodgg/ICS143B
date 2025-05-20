@@ -1,6 +1,7 @@
 #include "main.hpp"
 #include <string>
 #include <sstream>
+#include <fstream>
 
 /*
 Ready list: linked list data structure that links 
@@ -19,6 +20,8 @@ resources = NULL
 insert j into RL
 display: “process j created”
 */
+ofstream fout("output.txt");
+
 Ready_list::Ready_list() {
     three_tier = new LinkedList();
 }
@@ -57,11 +60,14 @@ void Ready_list::remove_from_head() {
 
 PairList::PairList() {
     processes = new LinkedList();
+    for (int i = 0; i < 16; ++i) {
+        requested[i] = 0;
+    }
 }
 
 void PairList::append(int val, int units) {
     processes->append(val);
-    requested[val] = units;
+    requested[val] += units;
     head = processes->head;
 }
 
@@ -99,13 +105,14 @@ void create(int p) {
             //add i to ready_list
             ready_list->append(i);
 
-            cout << "process " << i << " created" << endl;
+            //cout << "process " << i << " created" << endl;
             scheduler();
             return;
         }
     }
     //error for max amount of processes
     cout << "Error: max amount of processes created" << endl;
+    fout << "-1 ";
 }
 
 /*
@@ -122,6 +129,7 @@ void destroy(int j) {
     //error if j is not an existing process
     if (j < 0 || j >= n) {
         cout << "Error: process " << j << " not an existing process." << endl;
+        fout << "-1 ";
         return;
     }
 
@@ -159,6 +167,7 @@ void destroy(int j) {
     }
     //if j is not a child of i: error
     cout << "Error: process " << j << " is not a child of process of " << ready_list->head->data << ". Cannot destroy process " << j << "." << endl;
+    fout << "-1 ";
 }
 
 int free_process(int j) {
@@ -213,15 +222,17 @@ void request(int r, int k) {
     //error if r is not an existing resource
     if (r < 0 || r >= m) {
         cout << "Error: " << r << " is not an existing resource." << endl;
+        fout << "-1 ";
         return;
     }
 
     //error if process 0 requests a resource
     if (ready_list->head->data == 0) {
         cout << "Error: Process 0 cannot request resources" << endl;
+        fout << "-1 ";
         return;
     }
-
+    /*
     //error if i already holds r
     for (Node* p = PCB[ready_list->head->data].resources->head; p != nullptr; p = p->next) {
         if (p->data == r) {
@@ -229,17 +240,25 @@ void request(int r, int k) {
             return;
         }
     }
+    */
 
     //if r is free
     if ((RCB[r].inventory - RCB[r].state) >= k) {
         //allocate units
         RCB[r].state += k;
         //insert r into i(current running process)'s resource list
-        PCB[ready_list->head->data].resources->append(r, k);
         cout << "resource " << r << " allocated" << endl;
+        for (Node* p = PCB[ready_list->head->data].resources->head; p != nullptr; p = p->next) {
+            if (p->data == r) {
+                PCB[ready_list->head->data].resources->requested[r] += k;
+                return;
+            }
+        }
+        PCB[ready_list->head->data].resources->append(r, k);
     } else {
         if (k > RCB[r].inventory) {
             cout << "Error: can't request " << k << " units from resource " << r << ", which has " << RCB[r].inventory << " units total." << endl;
+            fout << "-1 ";
             return;
         }
         //state of current running process is now blocked
@@ -274,18 +293,21 @@ void release(int r, int k) {
     //error if r is not an existing resource
     if (r < 0 || r >= m) {
         cout << "Error: " << r << " is not an existing resource." << endl;
+        fout << "-1 ";
         return;
     }
 
     //error if i is not holding r
     if(PCB[ready_list->head->data].resources->processes->find(r) == nullptr) {
         cout << "Error: process " << ready_list->head->data << " is not holding resource " << r << "." << endl;
+        fout << "-1 ";
         return;
     }
 
     //error if releasing more units than we have
     if (PCB[ready_list->head->data].resources->requested[r] < k) {
         cout << "Error: cant release more units than already holding." << endl;
+        fout << "-1 ";
         return;
     }
 
@@ -315,6 +337,8 @@ void release(int r, int k) {
             if (RCB[r].waitlist->head != nullptr) {
                 j = RCB[r].waitlist->head->data;
                 u = RCB[r].waitlist->requested[j];
+            } else {
+                break;
             }
         }
     }
@@ -335,7 +359,7 @@ void timeout() {
 }
 
 void scheduler() {
-    cout << "process " << ready_list->head->data << " running" << endl;
+    cout << ready_list->head->data << " ";
 }
 
 /*
@@ -352,16 +376,17 @@ The init function should always perform the following tasks:
 */
 void init() {
     //clear ready list;
-    delete ready_list;
-
-    ready_list = new Ready_list();
-    ready_list->three_tier = new LinkedList();
+    while (ready_list->head != nullptr) {
+        ready_list->remove_from_head();
+    }
 
     //set all process states to free & free any memory that may have been allocated
     for (int i = 0; i < n; ++i) {
         PCB[i].state = -1;
         delete PCB[i].children;
+        PCB[i].children = nullptr;
         delete PCB[i].resources;
+        PCB[i].resources = nullptr;
     }
     //make PCB[0] (create() handles the case where PCB[0] is made and sets parent to -1)
     create(0);
@@ -375,11 +400,13 @@ void init() {
         } else {
             RCB[i].inventory = 3;
         }
-        
-        delete RCB[i].waitlist;
-        RCB[i].waitlist = new PairList();
+        if (RCB[i].waitlist != nullptr) {
+            while (RCB[i].waitlist->head != nullptr) {
+                RCB[i].waitlist->remove_from_head();
+            }
+        }
     }
-    cout << endl;
+    fout << endl;
 
 
 }
@@ -405,6 +432,10 @@ int main() {
     PCB = new Process[n];
     //initialize RCB array
     RCB = new Resource[m];
+
+    for (int i = 0; i < m; ++i) {
+        RCB[i].waitlist = new PairList();
+    }
     //ensure data structures are ready and process 0 is created
     init();
 
@@ -418,24 +449,28 @@ int main() {
         if (command == "cr") {
             if (param.empty() || !is_number(param) || stoi(param) < 0 || stoi(param) > 2) {
                 cout << "Error: please specify a valid priority level for process" << endl;
+                fout << "-1 ";
                 continue;
             }
             create(stoi(param));
         } else if (command == "de") {
             if (param.empty() || !is_number(param)) {
                 cout << "Error: please specify a valid process to delete" << endl;
+                fout << "-1 ";
                 continue;
             }
             destroy(stoi(param));
         } else if (command == "rq") {
             if (param.empty() || !is_number(param) || !is_number(param2)) {
                 cout << "Error: please specify a valid input" << endl;
+                fout << "-1 ";
                 continue;
             }
             request(stoi(param), stoi(param2));
         } else if (command == "rl") {
             if (param.empty() || !is_number(param) || !is_number(param2)) {
                 cout << "Error: please specify a valid input" << endl;
+                fout << "-1 ";
                 continue;
             }
             release(stoi(param), stoi(param2));
@@ -444,6 +479,7 @@ int main() {
         } else if (command == "in") {
             init();
         }
+        fout <<  ready_list->head->data << " ";
     }
 
 
