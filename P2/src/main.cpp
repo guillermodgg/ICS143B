@@ -7,6 +7,50 @@
 
 using namespace std;
 
+int translate(int VA) {
+    int s, p, w, pw;
+
+    //extract each component from the virtual address
+    s = VA >> 18;
+    w = VA & 0x1FF;
+    p = (VA >> 9) & 0x1FF;
+    pw = VA & 0x3FFFF;
+
+    if (pw >= PM[2*s]) {
+        return -1;
+    }
+
+    if (PM[2*s + 1] < 0) {
+        /*
+        TODO:
+        Allocate free frame f1 using list of free frames
+        Update list of free frames
+        Read disk block b = |PM[2s + 1]| into PM staring at location f2*512: read_block(b, f1*512)
+        PM[2s + 1] = f1 
+        update ST entry 
+        */
+
+       int free_frame = free_frames.head->data;
+       free_frames.remove_from_head();
+       int b = abs(PM[2*s + 1])
+    }
+
+    if (PM[PM[2*s + 1]*512 + p] < 0) {
+        /*
+        TODO:
+        Allocate free frame f2 using list of free frames
+        Update list of free frames
+        Read disk block b = |PM[PM[2s + 1]*512 + p]| into PM staring at location f2*512: read_block(b, f2*512)
+        PM[PM[2s + 1]*512 + p] = f2
+        update PT entry
+        */
+    }
+
+    return PM[PM[2*s + 1]*512 + p]*512 + w;
+
+
+}
+
 int main(int argc, char* argv[]) {
     // checks that the correct number of command line arguments are provided when ran
     if(argc < 3 || argc > 3) {
@@ -68,7 +112,7 @@ int main(int argc, char* argv[]) {
     getline(init_file, line);
 
     istringstream iss2(line);
-    string s, p, f;
+    string p;
 
     while (iss2 >> s >> p >> f) {
         int pt_frame = PM[2 * stoi(s) + 1];
@@ -91,6 +135,14 @@ int main(int argc, char* argv[]) {
         if (f_val > 0) {
                 free_frames.remove(f_val);
         }
+    }
+
+    ofstream outf("output.txt");
+
+    // extract the addresses from input file and translate
+    while (input_file >> line) {
+        int pa = translate(stoi(line));
+        outf << pa << " ";
     }
 
     return 0;

@@ -15,4 +15,8 @@ int D[st_size][page_size];
 
 LinkedList free_frames;
 
+int translate(int VA);
+
+void read_block(int b, int m);
+
 #endif
