@@ -16,39 +16,46 @@ int translate(int VA) {
     p = (VA >> 9) & 0x1FF;
     pw = VA & 0x3FFFF;
 
+    // if PW exceeds size of segment: invalid address
     if (pw >= PM[2*s]) {
         return -1;
     }
 
+    // if PT is not resident:
     if (PM[2*s + 1] < 0) {
-        /*
-        TODO:
-        Allocate free frame f1 using list of free frames
-        Update list of free frames
-        Read disk block b = |PM[2s + 1]| into PM staring at location f2*512: read_block(b, f1*512)
-        PM[2s + 1] = f1 
-        update ST entry 
-        */
-
+       // allocate free frame f1 using list of free frames
        int free_frame = free_frames.head->data;
+       // update list of free frames
        free_frames.remove_from_head();
-       int b = abs(PM[2*s + 1])
+       // read disk block b = |PM[2s + 1]| into PM staring at location f1*512: read_block(b, f1*512)
+       int b = abs(PM[2*s + 1]);
+       read_block(b, free_frame * 512);
+       // update ST entry
+       PM[2*s + 1] = free_frame;
     }
-
+    // if page p is not resident:
     if (PM[PM[2*s + 1]*512 + p] < 0) {
-        /*
-        TODO:
-        Allocate free frame f2 using list of free frames
-        Update list of free frames
-        Read disk block b = |PM[PM[2s + 1]*512 + p]| into PM staring at location f2*512: read_block(b, f2*512)
-        PM[PM[2s + 1]*512 + p] = f2
-        update PT entry
-        */
+        // allocate free frame f2 using list of free frames
+        int free_frame = free_frames.head->data;
+        // update list of free frames
+        free_frames.remove_from_head();
+        // read disk block b = |PM[PM[2s + 1]*512 + p]| into PM staring at location f2*512: read_block(b, f2*512)
+        int b = abs(PM[PM[2*s + 1]*512 + p]);
+        read_block(b, free_frame * 512);
+        // update PT entry
+        PM[PM[2*s + 1]*512 + p] = free_frame;
     }
 
     return PM[PM[2*s + 1]*512 + p]*512 + w;
 
 
+}
+
+void read_block(int b, int m) {
+    //copy everythign in block b to PM starting at address m
+    for (int i = 0; i < 512; ++i) {
+        PM[m + i] = D[b][i];
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -131,7 +138,7 @@ int main(int argc, char* argv[]) {
             cout << "Error: frame can't be 0: thats where ST resides. check your code!" << endl;
             return 1;
         }
-
+        // is a frame was allocated from PM, remove from free_frames list
         if (f_val > 0) {
                 free_frames.remove(f_val);
         }
