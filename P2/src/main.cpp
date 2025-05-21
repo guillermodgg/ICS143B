@@ -10,14 +10,20 @@ using namespace std;
 int translate(int VA) {
     int s, p, w, pw;
 
+    //cout << "VA: " << VA << endl;
     //extract each component from the virtual address
     s = VA >> 18;
+    //cout << "s: " << s << endl;
     w = VA & 0x1FF;
+    //cout << "w: " << w << endl;
     p = (VA >> 9) & 0x1FF;
+    //cout << "p: " << p << endl;
     pw = VA & 0x3FFFF;
+    //cout << "pw: " << pw << endl << endl;
 
     // if PW exceeds size of segment: invalid address
     if (pw >= PM[2*s]) {
+        //cout << "PM[2*s]: " << PM[2*s] << endl;
         return -1;
     }
 
@@ -144,7 +150,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    ofstream outf("output.txt");
+    ofstream outf("output-dp.txt");
 
     // extract the addresses from input file and translate
     while (input_file >> line) {
